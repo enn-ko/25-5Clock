@@ -58,7 +58,7 @@ function App() {
       resetTimer();
     }
     return () => clearTimeout(timeoutRef.current);
-  }, [play, timeLeft, timingType, breakLength, sessionLength]);
+  }, [play, timeLeft, timingType, breakLength, sessionLength,resetTimer]);
 
   const handleBreakDec = () => {
     if (breakLength > 1) {
