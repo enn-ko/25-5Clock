@@ -8,95 +8,68 @@ function App() {
   const [breakLength,setBreakLength] = useState(5)
   const [sessionLength,setSessionLength] = useState(25)
   const [timeLeft,setTimeLeft] = useState(1500)
-  const [timingType,setTimingType] = useState("SESSION")
+  const [timingType,setTimingType] = useState("Session")
   const [play,setPlay] = useState(false)
 
-  const timeOut = setTimeout(()=>{
-    if(timeLeft && play){
-      setTimeLeft(timeLeft-1)
-    }
-  },1000)
-
-
-  const timeFormater = ()=>{
-    const minutes = Math.floor(timeLeft / 60);
-    const seconds = timeLeft - minutes * 60;
-    const formatMinutes = minutes < 10 ? "0" + minutes : minutes
-    const formatSeconds = seconds < 10 ? "0" + seconds : seconds
-    return (`${formatMinutes} : ${formatSeconds}`)
-  }
-
-  const handlePlay = ()=>{
-    clearTimeout(timeOut);
-    setPlay(!play)
-  }
-
-  const handleReset = ()=>{
-    clearTimeout(timeOut);
-    setBreakLength(5)
-    setSessionLength(25)
-    setTimeLeft(1500)
-    setTimingType("SESSION")
-    setPlay(false)
-    const audio = document.getElementById('audio')
-    audio.pause()
-    audio.currentTime = 0
-  }
-  
-  const resetTimer = ()=>{
-    const audio = document.getElementById('audio')
-    if(!timeLeft && timingType === "SESSION"){
-      setTimingType("BREAK")
-      setTimeLeft(breakLength * 60)
-      audio.play()
-    }
-  if(!timeLeft && timingType === "BREAK"){
-    setTimingType("SESSION")
-    setTimeLeft(sessionLength * 60)
-    audio.pause()
-    audio.currentTime = 0
-  }
-  }
-
-  const clock = ()=>{
-    if(play){
-      timeOut()
-      resetTimer()
-    }else{
-      clearTimeout(timeOut)
-    }
-  }
-
-useEffect(()=>{ 
-  clock()
-
-},[play,timeOut, timeLeft])
 
   const handleBreakDec = ()=>{
-    if(breakLength > 1){
-      setBreakLength(breakLength - 1)
-    }
+    setBreakLength(prev => Math.max(1,prev - 1))
   }
 
-  const handleBreakInec = ()=>{
-    if(breakLength < 60){
-      setBreakLength(breakLength + 1)
-    }
-  }
+const handleBreakInec = ()=>{
+  setBreakLength(prev => Math.min(60, prev + 1))
+}
 
-  const handleSessionDec = ()=>{
-    if(sessionLength > 1){
-      setSessionLength(sessionLength - 1)
-      setTimeLeft(timeLeft - 60)
-    }
+const handleSessionDec = ()=>{
+ if(sessionLength > 1){
+  setSessionLength(sessionLength - 1)
+  setTimeLeft(timeLeft - 60)
+ }
+}
+
+const handleSessionInec = ()=>{
+  if(sessionLength < 60){
+    setSessionLength(sessionLength + 1)
+    setTimeLeft(timeLeft + 60)
   }
-  const handleSessionInec = ()=>{
-    if(sessionLength < 60){
-      setSessionLength(sessionLength + 1)
-      setTimeLeft(timeLeft + 60)
+}
+
+const handlePlay = ()=>{
+  setPlay(prev => !prev)
+}
+
+const handleReset = ()=>{
+  setBreakLength(5)
+  setSessionLength(25)
+  setTimeLeft(1500)
+  setPlay(false)
+  setTimingType("Session")
+  const audio = document.getElementById("audio")
+  audio.pause()
+  audio.currentTime = 0
+}
+
+useEffect(()=>{
+  if(play){
+    const interval = setInterval(()=>{
+      setTimeLeft(prev => prev > 0 ? prev - 1 : 0)
+    },1000)
+
+    if(timeLeft === 0){
+      const audio = document.getElementById("audio")
+      audio.play()
+      if(timingType === "Session"){
+        setTimingType("Break")
+        setTimeLeft(breakLength * 60)
+      }else{
+        setTimingType("Session")
+        setTimeLeft(sessionLength * 60)
+      }
     }
+    
+    return ()=> clearInterval(interval)
   }
-  const title = timingType === "SESSION" ? "Session" : "Break"
+},[timeLeft, play, timingType, breakLength, sessionLength])
   return (
     <div className="flex flex-col gap-10 justify-center items-center w-screen h-screen bg-gray-800 text-white">
       <h2 className="text-5xl mb-10 border rounded px-16 py-2 bg-blue-900">25 + 5 Clock</h2>
@@ -128,8 +101,8 @@ useEffect(()=>{
       </div>
       <div className="mt-3 p-8 border grid gap-5 rounded ">
         <div className="text-4xl grid gap-6">
-          <h2 id="time-label">{title}</h2>
-          <h2 id="time-left">{timeFormater()}</h2>
+          <h2 id="time-label">{timingType}</h2>
+          <h2 id="time-left">{`${Math.floor(timeLeft / 60).toString().padStart(2, "0")}  : ${(timeLeft % 60).toString().padStart(2, "0")}`}</h2>
         </div>
         <div className=" grid grid-cols-2 text-4xl items-center justify-center">
           <button  id="start_stop" onClick={handlePlay}>
